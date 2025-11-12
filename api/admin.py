@@ -70,14 +70,6 @@ class SlotAdmin(admin.ModelAdmin):
     ordering = ('start_time',)
 
 
-@admin.register(Booking)
-class BookingAdmin(admin.ModelAdmin):
-    list_display = ('slot', 'student', 'booked_at')
-    list_filter = ('student', 'slot__mentor', 'booked_at')
-    search_fields = ('student__email', 'slot__mentor__email')
-    ordering = ('-booked_at',)
-
-
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('title', 'image','students')
@@ -173,3 +165,42 @@ class PageContentAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "created_at")
     ordering = ("-created_at",)
 
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "student_name",
+        "mentor_name",
+        "date",
+        "start_time",
+        "end_time",
+        "is_completed",
+    )
+    list_filter = ("is_completed", "slot__date")
+    search_fields = (
+        "student__user__name",
+        "student__user__email",
+        "slot__mentor__user__name",
+        "slot__mentor__user__email",
+    )
+    ordering = ("-slot__date", "slot__start_time")
+
+    # Custom columns
+    def student_name(self, obj):
+        return obj.student.user.name
+    student_name.short_description = "Student"
+
+    def mentor_name(self, obj):
+        return obj.slot.mentor.user.name
+    mentor_name.short_description = "Mentor"
+
+    def date(self, obj):
+        return obj.slot.date
+    date.admin_order_field = "slot__date"
+
+    def start_time(self, obj):
+        return obj.slot.start_time
+
+    def end_time(self, obj):
+        return obj.slot.end_time

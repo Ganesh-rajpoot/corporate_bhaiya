@@ -24,6 +24,7 @@ from .utils import account_activation_token,generate_slots_for_mentor
 from django.urls import reverse
 from django.core.mail import send_mail
 from django.conf import settings
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db import transaction
 
 
@@ -755,18 +756,33 @@ class PageContentRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView)
     serializer_class = PageContentSerializer
 
 
+# class SlotListAPI(APIView):
+#     permission_classes = [AllowAny]
+#     def get(self, request, mentor_id):
+#         # Sirf is mentor ke unbooked slots dikhao
+#         slots = Slot.objects.filter(
+#             mentor_id=mentor_id,
+#             is_booked=False
+#         ).order_by("start_time")
+
+#         serializer = SlotSerializer(slots, many=True)
+#         return Response(serializer.data)
+
 class SlotListAPI(APIView):
-    permission_classes = [AllowAny]
     def get(self, request, mentor_id):
-        # Sirf is mentor ke unbooked slots dikhao
-        slots = Slot.objects.filter(
-            mentor_id=mentor_id,
-            is_booked=False
-        ).order_by("start_time")
+        try:
+            # 🔹 Find mentor profile using user.id
+            user = User.objects.get(id=mentor_id, is_mentor=True)
+            mentor_profile = MentorProfile.objects.get(user=user)
+        except User.DoesNotExist:
+            return Response({"error": "Mentor user not found"}, status=status.HTTP_404_NOT_FOUND)
+        except MentorProfile.DoesNotExist:
+            return Response({"error": "Mentor profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # 🔹 Get all slots of this mentor
+        slots = Slot.objects.filter(mentor=mentor_profile).order_by("date", "start_time")
         serializer = SlotSerializer(slots, many=True)
-        return Response(serializer.data)
-
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class BookingListAPI(APIView):
     # permission_classes = [IsAuthenticated]
@@ -808,3 +824,16 @@ class BookingCreateAPI(APIView):
                 {"error": "Slot not available or already booked."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class MyBookingsAPI(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request):
+        student = getattr(request.user, 'student_profile', None)
+        if not student:
+            return Response({'error': 'User is not a student or StudentProfile missing'}, status=400)
+
+        bookings = Booking.objects.filter(student=student).select_related('slot__mentor__user')
+        serializer = MyBookingSerializer(bookings, many=True)
+        return Response(serializer.data)

@@ -40,4 +40,5 @@ urlpatterns = [
     path('slots/<int:mentor_id>', SlotListAPI.as_view(), name='slot-list'),
     path('bookings/', BookingListAPI.as_view(), name='booking-list'),
     path('bookings/create/', BookingCreateAPI.as_view(), name='booking-create'),
+    path('my-bookings/', MyBookingsAPI.as_view(), name='my-bookings'),
 ]

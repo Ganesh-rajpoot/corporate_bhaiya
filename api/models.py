@@ -71,7 +71,7 @@ class MentorProfile(models.Model):
         return self.user.email
 
 class StudentProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='student_profile')
     college = models.CharField(max_length=255, blank=True)
     interests = models.TextField(blank=True)
     course = models.ManyToManyField('Course', blank=True)
@@ -96,10 +96,10 @@ class Slot(models.Model):
         return f"{self.mentor.user.email} - {self.date} ({self.start_time} - {self.end_time})"
 
 class Booking(models.Model):
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='bookings')
     slot = models.OneToOneField(Slot, on_delete=models.CASCADE)
     booked_at = models.DateTimeField(auto_now_add=True)
-
+    is_completed = models.BooleanField(default=False)
     def __str__(self):
         return f"Booked by {self.student.email} for {self.slot}"
 

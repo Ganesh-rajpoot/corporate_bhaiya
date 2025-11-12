@@ -168,6 +168,17 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'student_email', 'slot', 'booked_at']
         read_only_fields = ['booked_at']
 
+class MyBookingSerializer(serializers.ModelSerializer):
+    mentor_name = serializers.CharField(source='slot.mentor.user.name', read_only=True)
+    mentor_image = serializers.ImageField(source='slot.mentor.profile_image', read_only=True)  # match your model
+    date = serializers.DateField(source='slot.date', read_only=True)
+    start_time = serializers.TimeField(source='slot.start_time', read_only=True)
+    end_time = serializers.TimeField(source='slot.end_time', read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = ['id', 'mentor_name', 'mentor_image', 'date', 'start_time', 'end_time', 'is_completed']
+
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
