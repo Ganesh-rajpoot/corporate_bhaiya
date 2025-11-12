@@ -82,6 +82,7 @@ class StudentProfile(models.Model):
 
 class Slot(models.Model):
     mentor = models.ForeignKey(MentorProfile, on_delete=models.CASCADE, related_name='slots')
+    #date = models.DateField()
     start_time = models.TimeField() 
     end_time = models.TimeField() 
     is_booked = models.BooleanField(default=False)

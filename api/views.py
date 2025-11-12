@@ -61,6 +61,7 @@ class RegisterView(APIView):
                 bio=data.get("bio", ""),
                 experience=data.get("experience", 0),
                 skills=data.get("skills", ""),
+                #available_days=data.get("available_days", ""),
                 company=data.get("company", ""),
                 linkedin=data.get("linkedin", ""),
                 goals=data.get("goals", "")
@@ -294,10 +295,14 @@ class UserProfileView(APIView):
         if hasattr(user, 'mentorprofile'):
             mentor_data = request.data.get('mentorprofile', {})  # Extract nested mentorprofile data
             # Include top-level mobile and linkedin in mentor_data if present
+            #if 'mobile' in request.data:
+            #    mentor_data['mobile'] = request.data['mobile']
+            #if 'linkedin' in request.data:
+            #    mentor_data['linkedin'] = request.data['linkedin']
             for field in ["bio", "experience", "skills", "company", "linkedin", "mobile","goals", "schedules", "slot_duration", "future_weeks"]:
                 if field in request.data:
                     mentor_data[field] = request.data[field]
-            
+
             mentor_serializer = MentorProfileSerializer(user.mentorprofile, data=mentor_data, partial=True)
             if mentor_serializer.is_valid():
                 mentor_profile = mentor_serializer.save()
@@ -331,11 +336,14 @@ class UserProfileView(APIView):
         # Mentor profile update if mentor
         if hasattr(user, 'mentorprofile'):
             mentor_data = request.data.get('mentorprofile', {})  # Extract nested mentorprofile data
-            # Auto-map flat keys to mentor_data
+            # Include top-level mobile and linkedin in mentor_data if present
+            #if 'mobile' in request.data:
+            #    mentor_data['mobile'] = request.data['mobile']
+            #if 'linkedin' in request.data:
+            #    mentor_data['linkedin'] = request.data['linkedin']
             for field in ["bio", "experience", "skills", "company", "linkedin", "mobile","goals", "schedules", "slot_duration", "future_weeks"]:
                 if field in request.data:
                     mentor_data[field] = request.data[field]
-            
             mentor_serializer = MentorProfileSerializer(user.mentorprofile, data=mentor_data, partial=True)
             if mentor_serializer.is_valid():
                 mentor_profile = mentor_serializer.save()

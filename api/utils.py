@@ -39,6 +39,11 @@ def generate_slots_for_mentor(mentor_profile):
                 current_datetime = datetime.combine(current_date, start_time, tzinfo=timezone.get_current_timezone())
                 end_datetime = datetime.combine(current_date, end_time, tzinfo=timezone.get_current_timezone())
                 while current_datetime + slot_duration <= end_datetime:
+                    #Slot.objects.create(
+                    #    mentor=mentor_profile,
+                    #    start_time=current_datetime,
+                    #    end_time=current_datetime + slot_duration
+                    #)
                     Slot.objects.create(
                         mentor=mentor_profile.user,
                         date=current_date,  # ✅ add this line

@@ -16,6 +16,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     bio = serializers.CharField(required=False, allow_blank=True)
     experience = serializers.IntegerField(required=False)
     skills = serializers.CharField(required=False, allow_blank=True)
+    available_days = serializers.CharField(required=False, allow_blank=True)
     company = serializers.CharField(required=False, allow_blank=True)
     college = serializers.CharField(required=False, allow_blank=True)
     interests = serializers.CharField(required=False, allow_blank=True)
@@ -44,6 +45,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 bio=validated_data.get("bio", ""),
                 experience=validated_data.get("experience", 0),
                 skills=validated_data.get("skills", ""),
+                available_days=validated_data.get("available_days"),
                 company=validated_data.get("company", "")
             )
         elif role == "student":
@@ -93,7 +95,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class MentorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = MentorProfile
-        # fields = '__all__'
+        #fields = '__all__'
         exclude = ['user']
 
     def validate_schedules(self, value):
@@ -144,7 +146,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 class MentorAvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = MentorProfile
-        fields = ['start_time', 'end_time', 'slot_duration', 'future_weeks']
+        fields = ['available_days', 'start_time', 'end_time', 'slot_duration', 'future_weeks']
 
 
 class SlotSerializer(serializers.ModelSerializer):
