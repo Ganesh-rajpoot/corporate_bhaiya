@@ -180,99 +180,12 @@ class StudentFullProfileView(APIView):
             "user_errors": user_serializer.errors,
             "profile_errors": profile_serializer.errors
         }, status=400)
-
-
-# class UserProfileView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         user = request.user
-#         data = UserSerializer(user).data
-
-#         if hasattr(user, 'mentorprofile'):
-#             data['mentor_profile'] = MentorProfileSerializer(user.mentorprofile).data
-#         if hasattr(user, 'studentprofile'):
-#             data['student_profile'] = StudentProfileSerializer(user.studentprofile).data
-
-#         return Response(data)
-
-#     def put(self, request):
-#         user = request.user
-
-#         # User update
-#         user_serializer = UserUpdateSerializer(user, data=request.data)
-#         if user_serializer.is_valid():
-#             user_serializer.save()
-#         else:
-#             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Mentor profile update if mentor
-#         if hasattr(user, 'mentorprofile'):
-#             mentor_serializer = MentorProfileSerializer(user.mentorprofile, data=request.data, partial=True)
-#             if mentor_serializer.is_valid():
-#                 mentor_profile = mentor_serializer.save()
-#                 # ✅ Agar availability fields update hue hain to slots regenerate
-#                 if any(field in request.data for field in ["schedules", "slot_duration", "future_weeks"]):
-#                     generate_slots_for_mentor(mentor_profile)
-#             else:
-#                 return Response(mentor_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Student profile update if student
-#         if hasattr(user, 'studentprofile'):
-#             student_serializer = StudentProfileSerializer(user.studentprofile, data=request.data, partial=True)
-#             if student_serializer.is_valid():
-#                 student_serializer.save()
-
-                
-#             else:
-#                 return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         return Response({"detail": "Profile updated successfully."})
-
-#     def patch(self, request):
-#         user = request.user
-
-#         # User update (partial)
-#         user_serializer = UserUpdateSerializer(user, data=request.data, partial=True)
-#         if user_serializer.is_valid():
-#             user_serializer.save()
-#         else:
-#             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Mentor profile update if mentor
-#         if hasattr(user, 'mentorprofile'):
-#             mentor_serializer = MentorProfileSerializer(user.mentorprofile, data=request.data, partial=True)
-
-#             if mentor_serializer.is_valid():
-#                 print(mentor_serializer.validated_data)
-#                 mentor_profile = mentor_serializer.save()
-#                 # ✅ Agar availability fields update hue hain to slots regenerate
-#                 if any(field in request.data for field in ["schedules", "slot_duration", "future_weeks"]):
-#                     generate_slots_for_mentor(mentor_profile)
-#             else:
-#                 return Response(mentor_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Student profile update if student
-#         if hasattr(user, 'studentprofile'):
-#             student_serializer = StudentProfileSerializer(user.studentprofile, data=request.data, partial=True)
-#             if student_serializer.is_valid():
-#                 student_serializer.save()
-#             else:
-#                 return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         return Response({"detail": "Profile updated successfully."})
-
-#     def delete(self, request):
-#         user = request.user
-#         user.delete()
-#         return Response({"detail": "User deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        data = UserUpdateSerializer(user).data  # Use UserUpdateSerializer for consistency
+        data = UserUpdateSerializer(user).data # Basic user data
 
         if hasattr(user, 'mentorprofile'):
             data['mentor_profile'] = MentorProfileSerializer(user.mentorprofile).data
@@ -336,11 +249,6 @@ class UserProfileView(APIView):
         # Mentor profile update if mentor
         if hasattr(user, 'mentorprofile'):
             mentor_data = request.data.get('mentorprofile', {})  # Extract nested mentorprofile data
-            # Include top-level mobile and linkedin in mentor_data if present
-            #if 'mobile' in request.data:
-            #    mentor_data['mobile'] = request.data['mobile']
-            #if 'linkedin' in request.data:
-            #    mentor_data['linkedin'] = request.data['linkedin']
             for field in ["bio", "experience", "skills", "company", "linkedin", "mobile","goals", "schedules", "slot_duration", "future_weeks"]:
                 if field in request.data:
                     mentor_data[field] = request.data[field]
@@ -364,84 +272,6 @@ class UserProfileView(APIView):
 
         return Response({"detail": "Profile updated successfully."})
 
-def generate_slots_for_mentor(mentor_profile):
-    """
-    Generate time slots for a mentor based on their schedules, slot_duration, and future_weeks.
-    Deletes existing slots for the mentor and creates new ones.
-    """
-    # Delete existing slots to avoid duplicates
-    mentor_profile.slots.all().delete()
-
-    # Get current date and time in the server's timezone
-    now = timezone.now()
-    current_date = now.date()
-
-    # Map day names to weekday numbers (Monday=0, Sunday=6)
-    day_map = {
-        'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3,
-        'Friday': 4, 'Saturday': 5, 'Sunday': 6
-    }
-
-    # Get mentor's schedules, slot_duration, and future_weeks
-    schedules = mentor_profile.schedules
-    slot_duration = mentor_profile.slot_duration  # in minutes
-    future_weeks = mentor_profile.future_weeks
-
-    # Calculate the end date for slot generation
-    end_date = current_date + timedelta(weeks=future_weeks)
-
-    for schedule in schedules:
-        if not schedule.get('available', False):
-            continue  # Skip unavailable days
-
-        day_name = schedule.get('day')
-        start_time_str = schedule.get('startTime')
-        end_time_str = schedule.get('endTime')
-
-        if not (day_name and start_time_str and end_time_str):
-            continue  # Skip invalid schedule entries
-
-        # Parse start and end times
-        try:
-            start_time = datetime.strptime(start_time_str, '%H:%M').time()
-            end_time = datetime.strptime(end_time_str, '%H:%M').time()
-        except ValueError:
-            continue  # Skip invalid time formats
-
-        # Find the next occurrence of the day
-        target_weekday = day_map[day_name]
-        days_ahead = (target_weekday - current_date.weekday()) % 7
-        if days_ahead == 0 and now.time() > end_time:
-            days_ahead = 7  # If today's time is past end_time, move to next week
-
-        current_target_date = current_date + timedelta(days=days_ahead)
-
-        # Generate slots for each week until end_date
-        while current_target_date <= end_date:
-            # Combine date and time to create datetime objects
-            start_datetime = timezone.make_aware(
-                datetime.combine(current_target_date, start_time)
-            )
-            end_datetime = timezone.make_aware(
-                datetime.combine(current_target_date, end_time)
-            )
-
-            # Generate slots within the day's time range
-            current_slot_start = start_datetime
-            while current_slot_start < end_datetime:
-                slot_end = current_slot_start + timedelta(minutes=slot_duration)
-                if slot_end <= end_datetime:
-                    # Create a new slot
-                    Slot.objects.create(
-                        mentor=mentor_profile,
-                        start_time=current_slot_start,
-                        end_time=slot_end,
-                        is_booked=False
-                    )
-                current_slot_start += timedelta(minutes=slot_duration)
-
-            # Move to the same day in the next week
-            current_target_date += timedelta(weeks=1)
 class CourseListCreateAPIView(APIView):
     def get(self, request):
         courses = Course.objects.all()

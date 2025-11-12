@@ -22,7 +22,17 @@ def check_mentor_profile_changes(sender, instance, **kwargs):
             'future_weeks': old_instance.future_weeks != instance.future_weeks,
         }
 
+# @receiver(post_save, sender=MentorProfile)
+# def regenerate_slots_on_change(sender, instance, **kwargs):
+#     if hasattr(instance, '_changed_fields') and any(instance._changed_fields.values()):
+#         generate_slots_for_mentor(instance)
 @receiver(post_save, sender=MentorProfile)
-def regenerate_slots_on_change(sender, instance, **kwargs):
+def regenerate_slots_on_change(sender, instance, created, **kwargs):
+    # Always ensure the instance is the updated one
+    instance.refresh_from_db()
+
+    # Only regenerate if something important changed
     if hasattr(instance, '_changed_fields') and any(instance._changed_fields.values()):
+        print(f"⚙️ Regenerating slots for mentor: {instance.user.email}")
         generate_slots_for_mentor(instance)
+        print("✅ Slots regenerated successfully!")

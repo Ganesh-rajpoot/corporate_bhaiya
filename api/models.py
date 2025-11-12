@@ -80,13 +80,20 @@ class StudentProfile(models.Model):
         return self.user.email
 
 
+
 class Slot(models.Model):
-    mentor = models.ForeignKey(MentorProfile, on_delete=models.CASCADE, related_name='slots')
-    #date = models.DateField()
-    start_time = models.TimeField() 
-    end_time = models.TimeField() 
+    mentor = models.ForeignKey(MentorProfile, on_delete=models.CASCADE, related_name="slots")
+    date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    seats = models.PositiveIntegerField(default=1)
     is_booked = models.BooleanField(default=False)
 
+    class Meta:
+        unique_together = ('mentor', 'date', 'start_time', 'end_time')  # ✅ Prevent duplicates
+
+    def __str__(self):
+        return f"{self.mentor.user.email} - {self.date} ({self.start_time} - {self.end_time})"
 
 class Booking(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')

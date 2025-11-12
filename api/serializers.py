@@ -12,7 +12,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     user_role = serializers.ChoiceField(choices=[("student", "Student"), ("mentor", "Mentor")])
 
-    # Role-specific fields
+    # Role-specific 
     bio = serializers.CharField(required=False, allow_blank=True)
     experience = serializers.IntegerField(required=False)
     skills = serializers.CharField(required=False, allow_blank=True)
@@ -154,7 +154,9 @@ class SlotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Slot
-        fields = ['id', 'mentor', 'mentor_email', 'start_time', 'end_time', 'is_booked']
+        # fields = ['id', 'mentor', 'mentor_email', 'start_time', 'end_time', 'is_booked']
+        fields = ['id', 'mentor', 'date', 'start_time', 'end_time', 'seats', 'is_booked','mentor_email']
+
         read_only_fields = ['is_booked']
 
 class BookingSerializer(serializers.ModelSerializer):
